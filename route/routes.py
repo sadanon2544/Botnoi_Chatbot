@@ -35,11 +35,31 @@ async def create_upload_file(data: insert_base64):
     
     return {'message': 'Upload successful', 'url': url}
 
-@Router.get("/chatgptresponse", tags=["ChatBot"])
-async def get_chat_response(query: str, customer_id: str):
+@Router.get("/chat_gpt_response", tags=["chat_bot"])
+async def get_chat_response(chat_name : str ,query: str, customer_id: str):
     url = f"https://mekhav-2e2xbtpg2q-uc.a.run.app/chatgptresponse?query={query}&customer_id={customer_id}"
     response = requests.get(url)
     json_data = response.json()
+    
+    # สร้างเวลาปัจจุบัน
+    current_timestamp = datetime.now().isoformat()
+    # ส่วนที่ต้องการเพิ่ม
+    chat_history_update = {
+        "message_user":query, #เก็บเป็นค่า input ของผู้ใช้
+        "message_bot": json_data, #เก็บเป็นค่าที่ chat ตอบกับมา
+        "timestamp": current_timestamp
+    }
+    document = collection.find_one({"chat_name": chat_name})
+    if document:#ถ้ามีข้อมูล
+        # หาดัชนีใหม่ที่ต้องการสร้าง
+        new_index = str(len(document.get("chat_history", {})))
+
+        # อัปเดตเอกสาร
+        result = collection.update_one(
+            {"chat_name": chat_name},
+            {"$set": {"chat_history." + new_index: chat_history_update}}
+        )
+    
     return json_data
 
 @Router.get("/all_chat_name", tags=["all_chat_name"])
