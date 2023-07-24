@@ -18,7 +18,7 @@ def read_root():
     return  "Hello Welcome to my Chatbot PDF"
 
 @Router.post("/insert_new_chat", tags=["new chat"])
-async def create_upload_file(data: insert_base64,customer_id:str,chat_name:str):
+async def create_upload_file(data: insert_base64,customer_id:str,chat_name:str,chat_id:str):
     # ดีโค้ดไฟล์จาก base64 เป็นไฟล์ PDF
     file_base64 = data.base64
     file_data = base64.b64decode(file_base64)
@@ -34,11 +34,9 @@ async def create_upload_file(data: insert_base64,customer_id:str,chat_name:str):
 
     url = blob.public_url
 
-    get_next_chat_id = collection.count_documents({}) + 1 ## เป็นการนับจำนวน documents ใน database เพื่อให้ chat id สามารถ generat ขึ้นมาเองได้โดยไม่ต้อง
-
     new_chat = {
         "customer_id": customer_id,
-        "chat_id" : get_next_chat_id,
+        "chat_id" : chat_id,
         "chat_name": chat_name,
         "chat_history": {},
         "pdf_url": url,
@@ -121,4 +119,3 @@ async def update_chat_name(data:update_chat_name,customer_id: str,chat_id: int,c
 @Router.delete("/delete" ,tags=["data_delete"])
 async def delete(customer_id: str,chat_id:int,chat_name:str):
     collection.find_one_and_delete({"customer_id": customer_id, "chat_name": chat_name,"chat_id":chat_id})
-    
