@@ -49,7 +49,7 @@ async def create_upload_file(data: insert_base64,customer_id:str,chat_name:str,c
     
 
 @Router.get("/chat_gpt_response", tags=["chat_bot"])
-async def get_chat_response(chat_id:int ,chat_name : str ,query: str, customer_id: str):
+async def get_chat_response(chat_id:str ,chat_name : str ,query: str, customer_id: str):
     url = f"https://mekhav-2e2xbtpg2q-uc.a.run.app/chatgptresponse?query={query}&customer_id={customer_id}"
     response = requests.get(url)
     json_data = response.json()
@@ -78,22 +78,31 @@ async def get_chat_response(chat_id:int ,chat_name : str ,query: str, customer_i
 
 @Router.get("/all_chat_name", tags=["all_chat_name"])
 async def all_chat_histoy(customer_id: str):
-    # ดึงข้อมูลทั้งหมดจากเอกสารที่มี customer_id เป็น "1234"
-    result = collection.find({"customer_id": customer_id}, {"chat_name": 1})
+    # ดึงข้อมูลทั้งหมดจากเอกสารที่มี customer_id ตาม input
+    result = collection.find({"customer_id": customer_id}, {"chat_name": 1,"chat_id":1,"pdf_url":1,"isWaiting":1}) # ส่วน {"customer_id": customer_id} จะเป็นการกำหนดเงื่อนไขในการค้นหา และส่วน {"chat_name": 1,"chat_id":1,"pdf_url":1} คือทำให้คืนค่าเฉพาะฟิลด์ ที่เรากำหนด 
 
-    # สร้างรายการว่างเพื่อเก็บ chat_history
+    # สร้างรายการว่างเพื่อเก็บ chat_info
     all_chat_name = []
 
-    # วนลูปผลลัพธ์และเพิ่ม chat_history เข้าไปในรายการ
+    # วนลูปผลลัพธ์และเพิ่ม chat_info เข้าไปในรายการ
     for doc in result:
-        chat_history = doc.get("chat_name")
-        all_chat_name.append(chat_history)
+        chat_name = doc.get("chat_name")
+        chat_id = doc.get("chat_id")
+        pdf_url = doc.get("pdf_url")
+        isWaiting =doc.get("isWaiting")
+        chat_info = {
+            "chat_name" : chat_name,
+            "chat_id"   : chat_id,
+            "pdf_url"   :  pdf_url,
+            "isWaiting" :  isWaiting
+        }
+        all_chat_name.append(chat_info)
 
     return {"all_chat_name": all_chat_name}
 
 
 @Router.get("/show_chat_history", tags=["show_chat_history"])
-async def all_chat_histoy(customer_id: str,chat_id:int,chat_name:str):
+async def all_chat_histoy(customer_id: str,chat_id:str,chat_name:str):
     result = collection.find({"customer_id": customer_id, "chat_id":chat_id, "chat_name": chat_name})
 
     show_chat_history = []
@@ -105,7 +114,7 @@ async def all_chat_histoy(customer_id: str,chat_id:int,chat_name:str):
     return show_chat_history
 
 @Router.put("/update_chat_name", tags=["data_update"])
-async def update_chat_name(data:update_chat_name,customer_id: str,chat_id: int,chat_name:str):
+async def update_chat_name(data:update_chat_name,customer_id: str,chat_id: str,chat_name:str):
     collection.find_one_and_update(
         {
             "customer_id": customer_id,
@@ -117,5 +126,6 @@ async def update_chat_name(data:update_chat_name,customer_id: str,chat_id: int,c
         })
 
 @Router.delete("/delete" ,tags=["data_delete"])
-async def delete(customer_id: str,chat_id:int,chat_name:str):
+async def delete(customer_id: str,chat_id:str,chat_name:str):
     collection.find_one_and_delete({"customer_id": customer_id, "chat_name": chat_name,"chat_id":chat_id})
+    
